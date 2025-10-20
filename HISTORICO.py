@@ -47,13 +47,6 @@ def leer_excel(url, sheet_name="Data", header=3, pais="tanzania"):
     # Renombrar columnas
     df.rename(columns={col_año: "año", col_pais: "tanzania"}, inplace=True)
     
-    # Convertir años a int si es posible
-    df = df.reset_index(drop=True)
-    try:
-        df["año"] = df["año"].astype(int)
-    except:
-        pass
-    
     # Convertir columna del país a números
     df["tanzania"] = pd.to_numeric(df["tanzania"].astype(str).str.replace(",", "").str.strip(), errors='coerce')
     
@@ -81,7 +74,11 @@ Datos_Fecha = datasets["Poblacion_Destino"]
 for key in list(datasets.keys())[1:]:
     Datos_Fecha = pd.merge(Datos_Fecha, datasets[key], on="año", how="left")
 
-# Convertir columnas necesarias a números antes de calcular ratio
+# Filtrar filas válidas (donde 'año' sea un número)
+Datos_Fecha = Datos_Fecha[Datos_Fecha['año'].apply(lambda x: str(x).isdigit())].reset_index(drop=True)
+Datos_Fecha['año'] = Datos_Fecha['año'].astype(int)
+
+# Convertir columnas a numéricas antes de calcular ratio
 Datos_Fecha["Cantidad_Turistas_Año"] = pd.to_numeric(Datos_Fecha["Cantidad_Turistas_Año"], errors='coerce')
 Datos_Fecha["Poblacion_Destino"] = pd.to_numeric(Datos_Fecha["Poblacion_Destino"], errors='coerce')
 
@@ -90,9 +87,8 @@ Datos_Fecha["ratio_turistas_residentes"] = (
     Datos_Fecha["Cantidad_Turistas_Año"] / Datos_Fecha["Poblacion_Destino"] * 100
 )
 
-# Mostrar resultado
+# Guardar Excel limpio
+Datos_Fecha.to_excel("Historico.xlsx", index=False)
+
 print(Datos_Fecha.shape)
 print(Datos_Fecha.head())
-
-# Guardar CSV final
-Datos_Fecha.to_csv("Datos_Fecha_Tanzania.csv", index=False)
