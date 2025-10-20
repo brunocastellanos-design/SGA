@@ -29,9 +29,6 @@ jobs:
       # 4️⃣ Ejecutar el script que genera el Excel
       - name: Ejecutar script HISTORICO.py
         run: python HISTORICO.py
-
-     YAML
-
       # 5️⃣ Commit y push del archivo generado
       - name: Commit y push de Historico.xlsx
         run: |
