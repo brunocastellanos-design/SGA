@@ -37,5 +37,5 @@ jobs:
           git commit -m "Actualizar archivo de datos Tanzania"
           git push
         env:
-          GITHUB_TOKEN: ${{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}}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
