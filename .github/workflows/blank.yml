@@ -1,9 +1,9 @@
 name: Actualizar CSV de Tanzania
 
 on:
-  workflow_dispatch:   # Ejecutar manualmente
+  workflow_dispatch:   # Permite ejecutar manualmente
   schedule:
-    - cron: '0 12 * * *'  # Diario a las 12:00 UTC (opcional)
+    - cron: '0 12 * * *'   # Opcional: diario a las 12:00 UTC
 
 jobs:
   generar_csv:
@@ -19,26 +19,25 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 3️⃣ Instalar dependencias
+      # 3️⃣ Instalar dependencias necesarias
       - name: Instalar dependencias
         run: |
-          pip install pandas unidecode openpyxl xlrd openpyxl
+          pip install pandas unidecode openpyxl xlrd
 
-      # 4️⃣ Ejecutar script HISTORICO.py
-      - name: Ejecutar script
+      # 4️⃣ Ejecutar el script que genera el Excel
+      - name: Ejecutar script HISTORICO.py
         run: python HISTORICO.py
 
-      # 5️⃣ Commit y push del Excel generado
+      # 5️⃣ Commit y push del archivo generado siempre
       - name: Commit y push del Excel
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}  # Tu token de GitHub como secret
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git
-          git add datos_generados.xlsx
-          git diff --cached --quiet || git commit -m "Actualizar archivo de datos Tanzania"
-          git push origin main
+          git add -f datos_generados.xlsx
+          git commit -m "Actualizar archivo de datos Tanzania" || echo "No hay cambios, pero se fuerza commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
 
