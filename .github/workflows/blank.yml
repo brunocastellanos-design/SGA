@@ -33,9 +33,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Configurar remote con token para autenticación
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           git add datos_generados.xlsx
+          # Hacer commit solo si hay cambios
           git diff --cached --quiet || git commit -m "Actualizar archivo de datos Tanzania"
-          git push
+          git push origin main
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
