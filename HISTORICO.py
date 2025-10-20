@@ -6,14 +6,6 @@ def normalizar_columnas(df):
     df.columns = [unidecode(str(c).strip().lower()) for c in df.columns]
     return df
 
-# Detecta la columna de años
-def detectar_columna_año(df):
-    for col in df.columns:
-        col_norm = unidecode(str(col).strip().lower())
-        if "año" in col_norm or "year" in col_norm:
-            return col
-    raise ValueError("No se encontró ninguna columna de años en el dataset.")
-
 # Detecta la columna del país
 def detectar_columna_pais(df, pais="tanzania"):
     pais_norm = unidecode(pais.strip().lower())
@@ -27,17 +19,19 @@ def leer_excel(url, sheet_name="Data", fila_header=3, pais="tanzania"):
     # Leer Excel
     df = pd.read_excel(url, sheet_name=sheet_name, header=fila_header)
     
-    # Limpiamos columnas
+    # Normalizamos columnas
     df = normalizar_columnas(df)
     
-    # Detectamos columna año y país
-    col_año = detectar_columna_año(df)
+    # Suponemos que la primera columna es la de años
+    col_año = df.columns[0]
+    
+    # Detectamos columna del país
     col_pais = detectar_columna_pais(df, pais)
     
     # Seleccionamos solo año y país
     df = df[[col_año, col_pais]]
     
-    # Renombramos columnas a nombres consistentes
+    # Renombramos columnas de forma consistente
     df.rename(columns={col_año: "año", col_pais: "tanzania"}, inplace=True)
     
     # Reindexamos y convertimos años a int si es posible
