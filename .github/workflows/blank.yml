@@ -1,11 +1,18 @@
-name: Ejecutar Script y Subir Excel 🚀
+name: Ejecutar Script y Subir Excel Automático 🚀
 
 on:
-  workflow_dispatch: # Permite dispararlo manualmente o vía API
+  # 1. EJECUCIÓN AUTOMÁTICA DIARIA: 00:00 UTC (medianoche)
+  # El cron "0 0 * * *" significa: Minuto 0, Hora 0, Día del mes (*, cualquiera), Mes (*, cualquiera), Día de la semana (*, cualquiera)
+  schedule:
+    - cron: '0 0 * * *' 
+  
+  # 2. Permite la ejecución manual o por API (para Power Automate)
+  workflow_dispatch: 
 
 jobs:
   run_script:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v3
 
@@ -17,18 +24,22 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          # Añade 'openpyxl' para manejo de Excel moderno (.xlsx)
           pip install pandas xlrd openpyxl unidecode 
 
-      - name: Ejecutar script Python
-        # Asegúrate de que este script crea el archivo Excel
+      - name: Ejecutar script Python y Generar Excel
+        # Si el archivo datos_generados.xlsx ya existe, este paso lo sobrescribirá.
         run: python HISTORICO.py 
 
-      # AÑADIDO: Paso para subir el Excel como Artefacto
+      # PASO DE VERIFICACIÓN: Muestra el contenido de la carpeta de trabajo
+      # Esto ayuda a confirmar que el archivo datos_generados.xlsx existe antes de subirlo.
+      - name: Listar archivos para verificar
+        run: ls -l
+        
       - name: Subir Excel como Artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: ExcelGeneradoPorScript # Nombre del artefacto (lo usaremos en Power Automate)
-          path: datos_generados.xlsx    # <<< IMPORTANTE: REEMPLAZA ESTE NOMBRE 
-                                        # con el nombre real del archivo que crea tu script Python
-          retention-days: 1             # El archivo se conservará por 1 día
+          name: ExcelGeneradoPorScript 
+          path: datos_generados.xlsx
+          # IMPORTANTE: Ya que se trata de una nueva ejecución, GitHub siempre sobrescribe 
+          # el Artefacto con el mismo nombre si existe.
+          retention-days: 1
