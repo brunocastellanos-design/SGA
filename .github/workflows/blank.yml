@@ -9,4 +9,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Ejecutar script Python
-        run: python tu_script.py
+        run: python HISTORICO.py
