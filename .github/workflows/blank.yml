@@ -1,0 +1,12 @@
+name: Ejecutar Script
+
+on:
+  workflow_dispatch: # Permite dispararlo manualmente o vía API
+
+jobs:
+  run_script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Ejecutar script Python
+        run: python tu_script.py
