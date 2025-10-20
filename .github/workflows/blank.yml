@@ -22,7 +22,7 @@ jobs:
       # 3️⃣ Instalar dependencias necesarias
       - name: Instalar dependencias
         run: |
-          pip install pandas unidecode openpyxl
+          pip install pandas unidecode openpyxl xlrd
 
       # 4️⃣ Ejecutar el script que genera el Excel
       - name: Ejecutar script HISTORICO.py
