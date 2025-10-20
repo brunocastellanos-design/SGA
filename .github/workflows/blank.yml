@@ -30,15 +30,27 @@ jobs:
       - name: Ejecutar script HISTORICO.py
         run: python HISTORICO.py
 
+     YAML
+
       # 5️⃣ Commit y push del archivo generado
       - name: Commit y push de Historico.xlsx
         run: |
+          # 1. Configurar el bot
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 2. Agregar el archivo (si el script lo nombró 'Historico.xlsx')
           git add -f Historico.xlsx
-          git commit -m "Actualizar archivo de datos Tanzania" || echo "No hay cambios para commitear"
+          
+          # 3. Commit con el comando [skip ci] o [ci skip]
+          # El '|| echo "..."' es clave para que no falle si no hay cambios.
+          git commit -m "Actualizar datos Tanzania [ci skip]" || echo "No hay cambios para commitear."
+          
+          # 4. Push autenticado
+          # Usar la sintaxis con el token en la URL es la más robusta
           git push
         env:
+          # Es crucial usar este token predefinido por GitHub
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
