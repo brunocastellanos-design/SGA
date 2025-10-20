@@ -1,12 +1,12 @@
-name: Actualizar CSV de Tanzania
+name: Generar y subir Excel de Tanzania
 
 on:
   workflow_dispatch:   # Permite ejecutar manualmente
   schedule:
-    - cron: '0 12 * * *'   # Opcional: diario a las 12:00 UTC
+    - cron: '0 12 * * *'   # Diario a las 12:00 UTC (opcional)
 
 jobs:
-  generar_csv:
+  generar_excel:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,22 +19,22 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 3️⃣ Instalar dependencias necesarias
+      # 3️⃣ Instalar dependencias
       - name: Instalar dependencias
         run: |
           pip install pandas unidecode openpyxl xlrd
 
       # 4️⃣ Ejecutar el script que genera el Excel
-      - name: Ejecutar script HISTORICO.py
+      - name: Ejecutar HISTORICO.py
         run: python HISTORICO.py
 
-      # 5️⃣ Commit y push del archivo generado
-      - name: Commit y push del Excel
+      # 5️⃣ Commit y push del Excel generado
+      - name: Commit y push de datos_generados.xlsx
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add datos_generados.xlsx
-          git commit -m "Actualizar archivo de datos Tanzania"
+          git diff --cached --quiet || git commit -m "Actualizar archivo de datos Tanzania"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
