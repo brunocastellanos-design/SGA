@@ -1,10 +1,18 @@
 import pandas as pd
 from unidecode import unidecode
 
-# Función para normalizar columnas
+# Función para normalizar columnas (minúsculas, sin espacios, sin tildes)
 def normalizar_columnas(df):
     df.columns = [unidecode(str(c).strip().lower()) for c in df.columns]
     return df
+
+# Función para detectar la columna de años
+def detectar_columna_año(df):
+    for col in df.columns:
+        col_norm = unidecode(str(col).strip().lower())
+        if "año" in col_norm or "year" in col_norm:
+            return col
+    raise ValueError("No se encontró ninguna columna de años en el dataset.")
 
 # Función para leer y procesar Excel desde URL
 def leer_excel(url, sheet_name="Data", fila_header=3, pais="tanzania"):
@@ -30,15 +38,24 @@ def leer_excel(url, sheet_name="Data", fila_header=3, pais="tanzania"):
     # Normalizamos nombres de columnas
     df = normalizar_columnas(df)
     
-    # Normalizamos nombre del país
-    pais_norm = unidecode(pais.strip().lower())
+    # Detectamos columna de años
+    col_año = detectar_columna_año(df)
     
-    # Verificamos que exista la columna del país
-    if pais_norm not in df.columns:
+    # Detectamos columna del país
+    pais_norm = unidecode(pais.strip().lower())
+    col_pais = None
+    for col in df.columns:
+        if pais_norm in col:
+            col_pais = col
+            break
+    if col_pais is None:
         raise ValueError(f"No se encontró ninguna columna para '{pais}' en el dataset.")
     
-    # Seleccionamos solo "año" y el país
-    df = df[["año", pais_norm]]
+    # Seleccionamos solo año y país
+    df = df[[col_año, col_pais]]
+    
+    # Renombramos columnas a nombres consistentes
+    df.rename(columns={col_año: "año", col_pais: pais_norm}, inplace=True)
     
     return df
 
