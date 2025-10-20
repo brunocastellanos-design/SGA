@@ -1,53 +1,38 @@
 name: Actualizar Excel de Tanzania
 
-# Ejecutar manualmente o automáticamente
 on:
-  workflow_dispatch:
+  workflow_dispatch:       # manual
   schedule:
-    - cron: '0 12 * * *'  # Opcional: diario a las 12:00 UTC
+    - cron: '*/5 * * * *'  # automático cada 5 minutos
 
 jobs:
   generar_excel:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Clonar el repositorio
       - name: Checkout repositorio
         uses: actions/checkout@v3
 
-      # 2️⃣ Configurar Python
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # 3️⃣ Instalar dependencias
       - name: Instalar dependencias
         run: |
           pip install pandas unidecode openpyxl xlrd
 
-      # 4️⃣ Ejecutar el script que genera el Excel
       - name: Ejecutar script HISTORICO.py
         run: python HISTORICO.py
-      # 5️⃣ Commit y push del archivo generado
+
       - name: Commit y push de Historico.xlsx
         run: |
-          # 1. Configurar el bot
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 2. Agregar el archivo (si el script lo nombró 'Historico.xlsx')
           git add -f Historico.xlsx
-          
-          # 3. Commit con el comando [skip ci] o [ci skip]
-          # El '|| echo "..."' es clave para que no falle si no hay cambios.
           git commit -m "Actualizar datos Tanzania [ci skip]" || echo "No hay cambios para commitear."
-          
-          # 4. Push autenticado
-          # Usar la sintaxis con el token en la URL es la más robusta
           git push
         env:
-          # Es crucial usar este token predefinido por GitHub
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
