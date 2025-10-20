@@ -1,45 +1,61 @@
 import pandas as pd
 from unidecode import unidecode
 
-# Normaliza columnas (minúsculas, sin tildes, sin espacios)
+# Normaliza nombres de columnas
 def normalizar_columnas(df):
     df.columns = [unidecode(str(c).strip().lower()) for c in df.columns]
     return df
 
-# Detecta la columna del país
+# Detecta columna del país tras la transposición
 def detectar_columna_pais(df, pais="tanzania"):
     pais_norm = unidecode(pais.strip().lower())
     for col in df.columns:
-        if pais_norm in unidecode(str(col).strip().lower()):
+        col_norm = unidecode(str(col).strip().lower().replace(" ", ""))
+        if pais_norm.replace(" ", "") in col_norm:
             return col
     raise ValueError(f"No se encontró ninguna columna para '{pais}' en el dataset.")
 
-# Función para leer Excel y preparar DataFrame
-def leer_excel(url, sheet_name="Data", fila_header=3, pais="tanzania"):
-    # Leer Excel
-    df = pd.read_excel(url, sheet_name=sheet_name, header=fila_header)
+# Función para leer y procesar Excel
+def leer_excel(url, sheet_name="Data", header=3, pais="tanzania"):
+    df = pd.read_excel(url, sheet_name=sheet_name, header=header)
     
-    # Normalizamos columnas
+    # Guardar nombres originales de columnas (excepto la primera)
+    column_headers = df.columns.tolist()[1:]
+    
+    # Transponer
+    df = df.T
+    df.columns = df.iloc[0]      # Primera fila como header
+    df = df[1:]                  # Eliminar primera fila que ya es header
+    
+    # Crear columna de encabezado original
+    df['encabezado'] = column_headers
+    cols = ['encabezado'] + [c for c in df.columns if c != 'encabezado']
+    df = df[cols].reset_index(drop=True)
+    
+    # Normalizar columnas
     df = normalizar_columnas(df)
     
-    # Suponemos que la primera columna es la de años
+    # Columna de años es la primera después de transponer
     col_año = df.columns[0]
     
-    # Detectamos columna del país
+    # Detectar columna del país
     col_pais = detectar_columna_pais(df, pais)
     
-    # Seleccionamos solo año y país
+    # Seleccionar solo año y país
     df = df[[col_año, col_pais]]
     
-    # Renombramos columnas de forma consistente
+    # Renombrar columnas
     df.rename(columns={col_año: "año", col_pais: "tanzania"}, inplace=True)
     
-    # Reindexamos y convertimos años a int si es posible
+    # Convertir años a int si es posible
     df = df.reset_index(drop=True)
     try:
         df["año"] = df["año"].astype(int)
     except:
         pass
+    
+    # Convertir columna del país a números
+    df["tanzania"] = pd.to_numeric(df["tanzania"].astype(str).str.replace(",", "").str.strip(), errors='coerce')
     
     return df
 
@@ -64,6 +80,10 @@ for nombre, url in urls.items():
 Datos_Fecha = datasets["Poblacion_Destino"]
 for key in list(datasets.keys())[1:]:
     Datos_Fecha = pd.merge(Datos_Fecha, datasets[key], on="año", how="left")
+
+# Convertir columnas necesarias a números antes de calcular ratio
+Datos_Fecha["Cantidad_Turistas_Año"] = pd.to_numeric(Datos_Fecha["Cantidad_Turistas_Año"], errors='coerce')
+Datos_Fecha["Poblacion_Destino"] = pd.to_numeric(Datos_Fecha["Poblacion_Destino"], errors='coerce')
 
 # Calcular ratio turistas / residentes
 Datos_Fecha["ratio_turistas_residentes"] = (
