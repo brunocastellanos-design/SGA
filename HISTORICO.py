@@ -69,6 +69,7 @@ urls = {
     "Control_Corrupcion": "https://api.worldbank.org/v2/es/indicator/CC.EST?downloadformat=excel",
     "Rendicion_Cuentas": "https://api.worldbank.org/v2/es/indicator/VA.EST?downloadformat=excel",
     "Estado_Derecho": "https://api.worldbank.org/v2/es/indicator/RL.EST?downloadformat=excel",
+    "Calidad_Regulatoria": "https://api.worldbank.org/v2/es/indicator/RQ.PER.RNK?downloadformat=excel"
 }
 
 # Leer y procesar datasets
