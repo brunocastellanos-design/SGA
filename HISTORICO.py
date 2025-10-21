@@ -57,10 +57,18 @@ urls = {
     "Poblacion_Destino": "https://api.worldbank.org/v2/en/indicator/SP.POP.TOTL?downloadformat=excel",
     "Crecimiento_Poblacional": "https://api.worldbank.org/v2/en/indicator/SP.POP.GROW?downloadformat=excel",
     "Pobreza_Poblacion_Porcentual": "https://api.worldbank.org/v2/en/indicator/SI.POV.DDAY?downloadformat=excel",
+    "Pobreza_Multidimennsional_Porcentual": "https://api.worldbank.org/v2/en/indicator/SI.POV.MPWB?downloadformat=excel",
     "Porcentaje_Edad_Laboral": "https://api.worldbank.org/v2/en/indicator/SP.POP.1564.TO.ZS?downloadformat=excel",
+    "Porcentaje_Edad_Laboral_Estudios": "https://api.worldbank.org/v2/en/indicator/SE.SEC.CUAT.UP.ZS?downloadformat=excel",
+    "Tasa_Desempeleo": "https://api.worldbank.org/v2/es/indicator/SL.UEM.TOTL.NE.ZS?downloadformat=excel",
     "Cantidad_Turistas_Año": "https://api.worldbank.org/v2/en/indicator/ST.INT.ARVL?downloadformat=excel",
+    "Jornada_Laboral_Promedio": "https://api.worldbank.org/v2/en/indicator/SL.TLF.CACT.NE.ZS?downloadformat=excel",
+    "Inseguridad Alimentaria": "https://api.worldbank.org/v2/es/indicator/SN.ITK.MSFI.ZS?downloadformat=excel",
     "Estabilidad_Politica": "https://api.worldbank.org/v2/en/indicator/PV.PER.RNK?downloadformat=excel",
-    "Control_Corrupcion": "https://api.worldbank.org/v2/es/indicator/CC.EST?downloadformat=excel"
+    "Efectividad_Gubernamental": "https://api.worldbank.org/v2/es/indicator/GE.EST?downloadformat=excel",
+    "Control_Corrupcion": "https://api.worldbank.org/v2/es/indicator/CC.EST?downloadformat=excel",
+    "Rendicion_Cuentas": "https://api.worldbank.org/v2/es/indicator/VA.EST?downloadformat=excel",
+    "Estado_Derecho": "https://api.worldbank.org/v2/es/indicator/RL.EST?downloadformat=excel",
 }
 
 # Leer y procesar datasets
