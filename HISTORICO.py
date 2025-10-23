@@ -131,10 +131,10 @@ Datos_Fecha["ratio_turistas_residentes"] = (
 for col in ["Control_Corrupcion", "Estado_Derecho", "Efectividad_Gubernamental", "Rendicion_Cuentas"]:
     Datos_Fecha[col] = Datos_Fecha[col].apply(
         lambda x: (
-            "Riesgo bajo" if pd.notna(x) and x >= 1.0 else
-            "Riesgo medio" if pd.notna(x) and 0.0 <= x <= 0.99 else
-            "Riesgo alto" if pd.notna(x) and -1.0 <= x <= -0.01 else
-            "Riesgo muy alto" if pd.notna(x) and x < -1.0 else np.nan
+            "Bajo" if pd.notna(x) and x >= 1.0 else
+            "Medio" if pd.notna(x) and 0.0 <= x <= 0.99 else
+            "Alto" if pd.notna(x) and -1.0 <= x <= -0.01 else
+            "Muy alto" if pd.notna(x) and x < -1.0 else np.nan
         )
     )
 
