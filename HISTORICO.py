@@ -1,15 +1,10 @@
 import pandas as pd
 import numpy as np
 import json
-import requests # Necesario
-import io       # Necesario
-import warnings
 
-# Opcional: ignorar advertencias
-warnings.filterwarnings("ignore") 
-
+# --- Leer configuración (Sin manejo de errores de archivo) ---
 with open("config.json", "r", encoding="utf-8") as f:
-        config = json.load(f)
+    config = json.load(f)
 
 # Obtener el código de país desde el JSON
 if "country_code" not in config:
@@ -42,20 +37,15 @@ urls = {
 }
 
 # ----------------------------------------------------------------------
-# Función de Lectura REAL del World Bank (Corregida para BadZipFile y robustez de código de país)
+# Función de Lectura REAL del World Bank (Revertida al uso directo de URL)
 # ----------------------------------------------------------------------
 def leer_excel_codigo(url, nombre_indicador, codigo=config["country_code"], codigo_upper=country_code_upper):
     """
-    Lee un Excel del World Bank de forma robusta, filtra por Country Code y transforma los años a filas.
+    Lee un Excel del World Bank usando la URL, filtra por Country Code y transforma los años a filas.
     """
     try:
-        # Descarga robusta usando requests para evitar BadZipFile
-        response = requests.get(url, verify=True)
-        response.raise_for_status() 
-        data = io.BytesIO(response.content)
-
-        # Lectura desde el stream en memoria
-        df = pd.read_excel(data, sheet_name="Data", header=3) 
+        # Lectura directa de la URL (puede causar BadZipFile)
+        df = pd.read_excel(url, sheet_name="Data", header=3) 
     except Exception as e:
         raise RuntimeError(f"Fallo en la lectura del Excel para {nombre_indicador}: {e}")
 
@@ -122,6 +112,7 @@ initial_key = "Poblacion_Destino"
 if not datasets:
     print("\nNo se cargó ningún dataset. Finalizando el proceso.")
 elif initial_key not in datasets:
+    # Esto manejará el KeyError original si falla la carga de Poblacion_Destino
     print(f"\n❌ ERROR CRÍTICO: El dataset base ('{initial_key}') no se cargó correctamente.")
     print("El proceso se detiene. Revise el 'country_code' y los errores de carga.")
 else:
