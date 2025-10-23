@@ -152,10 +152,10 @@ for col in ["Estabilidad_Politica", "Calidad_Regulatoria"]:
 # C. Tasa de Homicidios (Tasa por 100,000)
 Datos_Fecha["Homicidios"] = Datos_Fecha["Homicidios"].apply(
     lambda x: (
-        "Riesgo bajo — niveles bajos de violencia" if pd.notna(x) and x < 5 else
-        "Riesgo medio — violencia moderada o localizada" if pd.notna(x) and 5 <= x <= 15 else
-        "Riesgo alto — violencia generalizada o crimen estructural" if pd.notna(x) and 15 < x <= 30 else
-        "Riesgo muy alto — violencia extrema o debilidad institucional severa" if pd.notna(x) and x > 30 else np.nan
+        "Bajo" if pd.notna(x) and x < 5 else
+        "Medio" if pd.notna(x) and 5 <= x <= 15 else
+        "Alto" if pd.notna(x) and 15 < x <= 30 else
+        "Muy alto" if pd.notna(x) and x > 30 else np.nan
     )
 )
 
