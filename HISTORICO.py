@@ -33,7 +33,8 @@ urls = {
     "Rendicion_Cuentas": "https://api.worldbank.org/v2/en/indicator/VA.EST?downloadformat=excel",
     "Estado_Derecho": "https://api.worldbank.org/v2/en/indicator/RL.EST?downloadformat=excel",
     "Calidad_Regulatoria": "https://api.worldbank.org/v2/en/indicator/RQ.PER.RNK?downloadformat=excel",
-    "Homicidios": "https://api.worldbank.org/v2/en/indicator/VC.IHR.PSRC.P5?downloadformat=excel"
+    "Homicidios": "https://api.worldbank.org/v2/en/indicator/VC.IHR.PSRC.P5?downloadformat=excel",
+    "Inseguridad_Alimentaria": "https://api.worldbank.org/v2/es/indicator/SN.ITK.MSFI.ZS?downloadformat=excel"
 }
 
 # ----------------------------------------------------------------------
