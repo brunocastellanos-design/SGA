@@ -1,1 +1,1 @@
-first(body('List_rows_present_in_a_table')?['value'])
+string(first(body('List_rows_present_in_a_table')?['value']))
