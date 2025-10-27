@@ -147,10 +147,10 @@ for col in ["Control_Corrupcion", "Estado_Derecho", "Efectividad_Gubernamental",
     if col in Datos_Fecha.columns:
         Datos_Fecha[f"{col}_cat"] = Datos_Fecha[col].apply(
             lambda x: (
-                "Bajo" if pd.notna(x) and x >= 1.0 else
-                "Medio" if pd.notna(x) and 0.0 <= x <= 0.99 else
-                "Alto" if pd.notna(x) and -1.0 <= x <= -0.01 else
-                "Muy alto" if pd.notna(x) and x < -1.0 else np.nan
+                "BAJO ⭣" if pd.notna(x) and x >= 1.0 else
+                "MEDIO ⭤" if pd.notna(x) and 0.0 <= x <= 0.99 else
+                "ALTO ⭡" if pd.notna(x) and -1.0 <= x <= -0.01 else
+                "MUY ALTO ⚠" if pd.notna(x) and x < -1.0 else np.nan
             )
         )
 
@@ -159,10 +159,10 @@ for col in ["Estabilidad_Politica", "Calidad_Regulatoria"]:
     if col in Datos_Fecha.columns:
         Datos_Fecha[f"{col}_cat"] = Datos_Fecha[col].apply(
             lambda x: (
-                "Bajo" if pd.notna(x) and x >= 75 else
-                "Medio" if pd.notna(x) and 50 <= x <= 74 else
-                "Alto" if pd.notna(x) and 25 <= x <= 49 else
-                "Muy alto" if pd.notna(x) and x < 25 else np.nan
+                "BAJO ⭣" if pd.notna(x) and x >= 75 else
+                "MEDIO ⭤" if pd.notna(x) and 50 <= x <= 74 else
+                "ALTO ⭡" if pd.notna(x) and 25 <= x <= 49 else
+                "MUY ALTO ⚠" if pd.notna(x) and x < 25 else np.nan
             )
         )
 
@@ -170,10 +170,10 @@ for col in ["Estabilidad_Politica", "Calidad_Regulatoria"]:
 if "Homicidios" in Datos_Fecha.columns:
     Datos_Fecha["Homicidios_cat"] = Datos_Fecha["Homicidios"].apply(
         lambda x: (
-            "Bajo" if pd.notna(x) and x < 5 else
-            "Medio" if pd.notna(x) and 5 <= x <= 15 else
-            "Alto" if pd.notna(x) and 15 < x <= 30 else
-            "Muy alto" if pd.notna(x) and x > 30 else np.nan
+            "BAJO ⭣" if pd.notna(x) and x < 5 else
+            "MEDIO ⭤" if pd.notna(x) and 5 <= x <= 15 else
+            "ALTO ⭡" if pd.notna(x) and 15 < x <= 30 else
+            "MUY ALTO ⚠" if pd.notna(x) and x > 30 else np.nan
         )
     )
 
