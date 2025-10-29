@@ -147,7 +147,7 @@ for col in ["Control_Corrupcion", "Estado_Derecho", "Efectividad_Gubernamental",
     if col in Datos_Fecha.columns:
         Datos_Fecha[f"{col}_cat"] = Datos_Fecha[col].apply(
             lambda x: (
-                "BAJO ⭣" if pd.notna(x) and x >= 1.0 else
+                "BAJO ⭣" if pd.notna(x) and x > 0.99 else
                 "MEDIO ⭤" if pd.notna(x) and 0.0 <= x <= 0.99 else
                 "ALTO ⭡" if pd.notna(x) and -1.0 <= x <= -0.01 else
                 "MUY ALTO ⚠" if pd.notna(x) and x < -1.0 else np.nan
@@ -159,7 +159,7 @@ for col in ["Estabilidad_Politica", "Calidad_Regulatoria"]:
     if col in Datos_Fecha.columns:
         Datos_Fecha[f"{col}_cat"] = Datos_Fecha[col].apply(
             lambda x: (
-                "BAJO ⭣" if pd.notna(x) and x >= 75 else
+                "BAJO ⭣" if pd.notna(x) and x > 74 else
                 "MEDIO ⭤" if pd.notna(x) and 50 <= x <= 74 else
                 "ALTO ⭡" if pd.notna(x) and 25 <= x <= 49 else
                 "MUY ALTO ⚠" if pd.notna(x) and x < 25 else np.nan
@@ -187,5 +187,6 @@ print(Datos_Fecha.head())
 
 
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
+
 
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
