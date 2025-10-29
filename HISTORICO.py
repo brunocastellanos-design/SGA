@@ -147,10 +147,10 @@ for col in ["Control_Corrupcion", "Estado_Derecho", "Efectividad_Gubernamental",
     if col in Datos_Fecha.columns:
         Datos_Fecha[f"{col}_cat"] = Datos_Fecha[col].apply(
             lambda x: (
-                "BAJO ⭣" if pd.notna(x) and x >= 0.99 else
-                "MEDIO ⭤" if pd.notna(x) and 0 <= x < 0.99 else
-                "ALTO ⭡" if pd.notna(x) and -1 <= x < 0 else
-                "MUY ALTO ⚠" if pd.notna(x) and x < -1 else np.nan
+                "BAJO ⭣" if pd.notna(x) and x >= 1.0 else
+                "MEDIO ⭤" if pd.notna(x) and 0.0 <= x <= 0.99 else
+                "ALTO ⭡" if pd.notna(x) and -1.0 <= x <= -0.01 else
+                "MUY ALTO ⚠" if pd.notna(x) and x < -1.0 else np.nan
             )
         )
 
@@ -159,7 +159,7 @@ for col in ["Estabilidad_Politica", "Calidad_Regulatoria"]:
     if col in Datos_Fecha.columns:
         Datos_Fecha[f"{col}_cat"] = Datos_Fecha[col].apply(
             lambda x: (
-                "BAJO ⭣" if pd.notna(x) and x > 74 else
+                "BAJO ⭣" if pd.notna(x) and x >= 75 else
                 "MEDIO ⭤" if pd.notna(x) and 50 <= x <= 74 else
                 "ALTO ⭡" if pd.notna(x) and 25 <= x <= 49 else
                 "MUY ALTO ⚠" if pd.notna(x) and x < 25 else np.nan
@@ -177,7 +177,106 @@ if "Homicidios" in Datos_Fecha.columns:
         )
     )
 
+# ----------------------------------------------------------------------
+# Categorización de Crecimiento Poblacional
+# ----------------------------------------------------------------------
+if "Crecimiento_Poblacional" in Datos_Fecha.columns:
+    Datos_Fecha["Crecimiento_Poblacional_cat"] = Datos_Fecha["Crecimiento_Poblacional"].apply(
+        lambda x: (
+            "ALTO ⭡" if pd.notna(x) and x < 0 else  # decrecimiento
+            "MEDIO ⭤" if pd.notna(x) and 0 <= x <= 1 else
+            "BAJO ⭣" if pd.notna(x) and 1 < x <= 2 else
+            "ALTO ⭡" if pd.notna(x) and x > 2 else np.nan
+        )
+    )
 
+# ----------------------------------------------------------------------
+# Categorización de IPC
+# ----------------------------------------------------------------------
+if "IPC" in Datos_Fecha.columns:
+    Datos_Fecha["IPC_cat"] = Datos_Fecha["IPC"].apply(
+        lambda x: (
+            "BAJO ⭣" if pd.notna(x) and x < 3 else    # Inflación baja, estable
+            "MEDIO ⭤" if pd.notna(x) and 3 <= x <= 15 else  # Inflación moderada
+            "ALTO ⭡" if pd.notna(x) and x > 15 else np.nan  # Inflación muy alta
+        )
+    )
+
+# ----------------------------------------------------------------------
+# Categorización de Pobreza_Poblacion_Porcentual
+# ----------------------------------------------------------------------
+if "Pobreza_Poblacion_Porcentual" in Datos_Fecha.columns:
+    Datos_Fecha["Pobreza_Poblacion_Porcentual_cat"] = Datos_Fecha["Pobreza_Poblacion_Porcentual"].apply(
+        lambda x: (
+            "BAJO ⭣" if pd.notna(x) and x < 10 else    # pobreza baja
+            "MEDIO ⭤" if pd.notna(x) and 10 <= x <= 50 else  # pobreza moderada
+            "ALTO ⭡" if pd.notna(x) and x > 50 else np.nan  # pobreza alta
+        )
+    )
+
+# ----------------------------------------------------------------------
+# Categorización de Pobreza_Multidimennsional_Porcentual
+# ----------------------------------------------------------------------
+if "Pobreza_Multidimennsional_Porcentual" in Datos_Fecha.columns:
+    Datos_Fecha["Pobreza_Multidimennsional_Porcentual_cat"] = Datos_Fecha["Pobreza_Multidimennsional_Porcentual"].apply(
+        lambda x: (
+            "BAJO ⭣" if pd.notna(x) and x < 10 else    # baja incidencia
+            "MEDIO ⭤" if pd.notna(x) and 10 <= x <= 30 else  # privaciones significativas
+            "ALTO ⭡" if pd.notna(x) and x > 30 else np.nan  # pobreza multidimensional alta
+        )
+    )
+
+
+# ----------------------------------------------------------------------
+# Categorización de Porcentaje_Edad_Laboral
+# ----------------------------------------------------------------------
+if "Porcentaje_Edad_Laboral" in Datos_Fecha.columns:
+    Datos_Fecha["Porcentaje_Edad_Laboral_cat"] = Datos_Fecha["Porcentaje_Edad_Laboral"].apply(
+        lambda x: (
+            "ALTO ⭡" if pd.notna(x) and x < 55 else       # población envejecida o dependiente
+            "MEDIO ⭤" if pd.notna(x) and 55 <= x <= 70 else  # estructura equilibrada
+            "ALTO ⭡" if pd.notna(x) and x > 70 else np.nan  # presión laboral alta
+        )
+    )
+
+# ----------------------------------------------------------------------
+# Categorización de Porcentaje_Edad_Laboral_Estudios
+# ----------------------------------------------------------------------
+if "Porcentaje_Edad_Laboral_Estudios" in Datos_Fecha.columns:
+    Datos_Fecha["Porcentaje_Edad_Laboral_Estudios_cat"] = Datos_Fecha["Porcentaje_Edad_Laboral_Estudios"].apply(
+        lambda x: (
+            "BAJO ⭣" if pd.notna(x) and x >= 60 else       # alta capacitación → riesgo bajo
+            "MEDIO ⭤" if pd.notna(x) and 30 <= x <= 59 else  # capital humano intermedio
+            "ALTO ⭡" if pd.notna(x) and x < 30 else np.nan   # baja capacitación → riesgo alto
+        )
+    )  
+
+
+# ----------------------------------------------------------------------
+# Categorización de Tasa_Desempleo
+# ----------------------------------------------------------------------
+if "Tasa_Desempleo" in Datos_Fecha.columns:
+    Datos_Fecha["Tasa_Desempleo_cat"] = Datos_Fecha["Tasa_Desempleo"].apply(
+        lambda x: (
+            "BAJO ⭣" if pd.notna(x) and x < 6 else      # desempleo bajo
+            "MEDIO ⭤" if pd.notna(x) and 6 <= x <= 10 else  # desempleo moderado
+            "ALTO ⭡" if pd.notna(x) and x > 10 else np.nan   # desempleo alto
+        )
+    )
+
+Datos_Fecha["Ratio_turista_poblacion"] = Datos_Fecha["Cantidad_Turistas_Año"]/Datos_Fecha["Poblacion_Destino"]*100
+
+# ----------------------------------------------------------------------
+# Categorización de ratio_turista_poblacion
+# ----------------------------------------------------------------------
+if "ratio_turistas_residentes" in Datos_Fecha.columns:
+    Datos_Fecha["ratio_turistas_residentes_cat"] = Datos_Fecha["ratio_turistas_residentes"].apply(
+        lambda x: (
+            "BAJO ⭣" if pd.notna(x) and x < 100 else       # baja presión turística
+            "MEDIO ⭤" if pd.notna(x) and 100 <= x <= 300 else  # presión moderada
+            "ALTO ⭡" if pd.notna(x) and x > 300 else np.nan   # sobrecarga turística
+        )
+    )
 # ----------------------------------------------------------------------
 # 9️⃣ Resultado final
 # ----------------------------------------------------------------------
@@ -188,6 +287,4 @@ print(Datos_Fecha.head())
 
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
 
-
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
-
