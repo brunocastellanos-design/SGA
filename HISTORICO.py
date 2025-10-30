@@ -137,6 +137,7 @@ for col in numericas:
 if "Cantidad_Turistas_Año" in Datos_Fecha.columns and "Poblacion_Destino" in Datos_Fecha.columns:
     Datos_Fecha["ratio_turistas_residentes"] = Datos_Fecha["Cantidad_Turistas_Año"] / Datos_Fecha["Poblacion_Destino"] * 100
 
+
 # ----------------------------------------------------------------------
 # 8️⃣ Categorización de riesgo vectorizada con tipo object
 # ----------------------------------------------------------------------
@@ -256,6 +257,12 @@ if "ratio_turistas_residentes" in Datos_Fecha.columns:
     ]
     valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
     categorizar_npselect(Datos_Fecha, "ratio_turistas_residentes", condiciones, valores)
+
+for i in ["estabilidad_politica", "calidad_regulatoria", "Pobreza_Multidimennsional_Porcentual",
+           "porcentaje_edad_laboral_estudios", "porcentaje_edad_laboral", "tasa_desempleo", "rario_turistas_residentes"]:
+    
+    Datos_Fecha[i] = Datos_Fecha[i]/100
+    
 
 # ----------------------------------------------------------------------
 # 9️⃣ Resultado final
