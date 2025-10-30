@@ -5,8 +5,9 @@ import json
 # ----------------------------------------------------------------------
 # 1️⃣ Leer configuración del JSON
 # ----------------------------------------------------------------------
-config = {"@odata.etag":"","ItemInternalId":"e810fe45-a2fd-4634-ac17-615261ba82f7","Id":"51","Start time":"45959.5441782407","Completion time":"45959.5442592593","Email":"anonymous","Name":"","Language":"English (United Kingdom)‎","Indique su nombre":"43.244392, -3.973940","Indique su correo corporativo":"43.244392, -3.973940","Indique la localización según las cordenadas de google maps (p_x002e_j_x002e_ -5_x002e_919447, 39_x002e_352937)":"43.244392, -3.973940","⚠️ Si se presiona \"Aceptar\" se eliminaran los procesos del proyecto actual ⚠️\n\nPasos a realizar_x003a_\n\n1_x002e_ Confirmar la finalización del proyecto actual\n2_x002e_ Realizar una copia del dashboard del proyeto actua":"Aceptar","Latitud":"43.244392","Longitud":"-3.97394","Distancia al aeropuerto (km)":"310","Aeropuerto más cercano":"Adolfo Suárez Madrid–Barajas Airport","id_formulario":"","Localidad":"-","Región":"Cantabria","País":"Spain"}
-
+with open("config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+    
 nombre_pais_json = config.get("País")
 if not nombre_pais_json:
     raise ValueError("El archivo config.json debe contener la clave 'País'.")
@@ -148,7 +149,7 @@ for col in gob_cols:
     if col in Datos_Fecha.columns:
         condiciones = [
             Datos_Fecha[col] >= 1.0,
-            (Datos_Fecha[col] >= 0.0) & (Datos_Fecha[col] <= 0.99),
+            (Datos_Fecha[col] >= 0.0) & (Datos_Fecha[col] < 1.0),
             (Datos_Fecha[col] >= -1.0) & (Datos_Fecha[col] <= -0.01),
             Datos_Fecha[col] < -1.0
         ]
@@ -264,4 +265,5 @@ print("\nVista preliminar de Datos_Fecha:")
 print(Datos_Fecha.head())
 
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
+
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
