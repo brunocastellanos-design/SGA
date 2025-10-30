@@ -258,11 +258,19 @@ if "ratio_turistas_residentes" in Datos_Fecha.columns:
     valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
     categorizar_npselect(Datos_Fecha, "ratio_turistas_residentes", condiciones, valores)
 
-for i in ["estabilidad_politica", "calidad_regulatoria", "Pobreza_Multidimennsional_Porcentual",
-           "porcentaje_edad_laboral_estudios", "porcentaje_edad_laboral", "tasa_desempleo", "rario_turistas_residentes"]:
-    
-    Datos_Fecha[i] = Datos_Fecha[i]/100
-    
+cols_porcentaje = [
+    "Estabilidad_Politica",
+    "Calidad_Regulatoria",
+    "Pobreza_Multidimennsional_Porcentual",
+    "Porcentaje_Edad_Laboral_Estudios",
+    "Porcentaje_Edad_Laboral",
+    "Tasa_Desempleo",
+    "ratio_turistas_residentes"
+]
+
+for col in cols_porcentaje:
+    if col in Datos_Fecha.columns:
+        Datos_Fecha[col] = Datos_Fecha[col] / 100
 
 # ----------------------------------------------------------------------
 # 9️⃣ Resultado final
