@@ -162,7 +162,7 @@ for col in rank_cols:
     if col in Datos_Fecha.columns:
         condiciones = [
             Datos_Fecha[col] >= 75,
-            (Datos_Fecha[col] >= 50) & (Datos_Fecha[col] <= 74),
+            (Datos_Fecha[col] >= 50) & (Datos_Fecha[col] < 75),
             (Datos_Fecha[col] >= 25) & (Datos_Fecha[col] <= 49),
             Datos_Fecha[col] < 25
         ]
@@ -267,3 +267,4 @@ print(Datos_Fecha.head())
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
 
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
+
