@@ -260,6 +260,27 @@ if "ratio_turistas_residentes" in Datos_Fecha.columns:
     valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
     categorizar_npselect(Datos_Fecha, "ratio_turistas_residentes", condiciones, valores)
 
+# Acceso_Agua_Potable
+if "Acceso_Agua_Potable" in Datos_Fecha.columns:
+    condiciones = [
+        Datos_Fecha["Acceso_Agua_Potable"] >= 90,
+        (Datos_Fecha["Acceso_Agua_Potable"] >= 60) & (Datos_Fecha["Acceso_Agua_Potable"] < 90),
+        Datos_Fecha["Acceso_Agua_Potable"] < 60
+    ]
+    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
+    categorizar_npselect(Datos_Fecha, "Acceso_Agua_Potable", condiciones, valores)
+
+# Acceso_Saneamiento
+if "Acceso_Saneamiento" in Datos_Fecha.columns:
+    condiciones = [
+        Datos_Fecha["Acceso_Saneamiento"] >= 90,
+        (Datos_Fecha["Acceso_Saneamiento"] >= 60) & (Datos_Fecha["Acceso_Saneamiento"] < 90),
+        Datos_Fecha["Acceso_Saneamiento"] < 60
+    ]
+    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
+    categorizar_npselect(Datos_Fecha, "Acceso_Saneamiento", condiciones, valores)
+
+
 # ----------------------------------------------------------------------
 # 9️⃣ Resultado final
 # ----------------------------------------------------------------------
