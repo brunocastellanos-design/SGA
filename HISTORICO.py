@@ -37,7 +37,8 @@ urls = {
     "Homicidios": "https://api.worldbank.org/v2/en/indicator/VC.IHR.PSRC.P5?downloadformat=excel",
     "IPC": "https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=excel",
     "Acceso_Agua_Potable": "https://api.worldbank.org/v2/en/indicator/SH.H2O.BASW.ZS?downloadformat=excel",
-    "Acceso_Saneamiento": "https://api.worldbank.org/v2/es/indicator/SH.STA.BASS.ZS?downloadformat=excel"
+    "Acceso_Saneamiento": "https://api.worldbank.org/v2/es/indicator/SH.STA.BASS.ZS?downloadformat=excel",
+    "Poblacion_Urbana": "https://api.worldbank.org/v2/en/indicator/EN.POP.SLUM.UR.ZS?downloadformat=excel"
 }
 
 # ----------------------------------------------------------------------
@@ -279,6 +280,26 @@ if "Acceso_Saneamiento" in Datos_Fecha.columns:
     ]
     valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
     categorizar_npselect(Datos_Fecha, "Acceso_Saneamiento", condiciones, valores)
+
+if "Inseguridad_Alimentaria" in Datos_Fecha.columns:
+    condiciones = [
+        Datos_Fecha["Inseguridad_Alimentaria"] <= 10,
+        (Datos_Fecha["Inseguridad_Alimentaria"] < 10) & (Datos_Fecha["Inseguridad_Alimentaria"] >= 30),
+        Datos_Fecha["Inseguridad_Alimentaria"] > 30
+    ]
+    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
+    categorizar_npselect(Datos_Fecha, "Inseguridad_Alimentaria", condiciones, valores)
+
+
+if "Poblacion_Urbana" in Datos_Fecha.columns:
+    condiciones = [
+        Datos_Fecha["Poblacion_Urbana"] <= 10,
+        (Datos_Fecha["Poblacion_Urbana"] < 10) & (Datos_Fecha["Poblacion_Urbana"] >= 30),
+        Datos_Fecha["Poblacion_Urbana"] > 30
+    ]
+    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
+    categorizar_npselect(Datos_Fecha, "Poblacion_Urbana", condiciones, valores)
+
 
 
 # ----------------------------------------------------------------------
