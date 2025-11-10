@@ -53,11 +53,19 @@ def buscar_country_code(df, nombre_pais):
     return None
 
 # ----------------------------------------------------------------------
-# 4️⃣ Leer Excel y detectar hoja correcta
+# 4️⃣ Leer Excel desde URL (maneja redirecciones y contenido binario)
 # ----------------------------------------------------------------------
+import requests
+from io import BytesIO
+
 def leer_hoja_valida(url):
     try:
-        xls = pd.ExcelFile(url)
+        # 🔹 Descarga segura (maneja redirecciones y cabeceras raras)
+        r = requests.get(url, timeout=60)
+        r.raise_for_status()
+
+        file_like = BytesIO(r.content)
+        xls = pd.ExcelFile(file_like)
     except Exception as e:
         raise RuntimeError(f"No se pudo abrir el archivo desde {url}: {e}")
 
@@ -65,7 +73,7 @@ def leer_hoja_valida(url):
     for hoja in xls.sheet_names:
         try:
             df_temp = pd.read_excel(xls, sheet_name=hoja, nrows=5)
-            if "Country Name" in df_temp.columns:
+            if any("Country" in str(c) for c in df_temp.columns):
                 hoja_valida = hoja
                 break
         except Exception:
@@ -73,16 +81,17 @@ def leer_hoja_valida(url):
 
     if not hoja_valida:
         raise ValueError(f"No se encontró una hoja válida en el archivo {url}")
-    return hoja_valida
+
+    return hoja_valida, file_like
 
 # ----------------------------------------------------------------------
-# 5️⃣ Buscar country code en los datasets
+# 5️⃣ Buscar código de país probando todos los datasets
 # ----------------------------------------------------------------------
 country_code_obtenido = None
 for nombre, url in urls.items():
     try:
-        hoja = leer_hoja_valida(url)
-        df = pd.read_excel(url, sheet_name=hoja, header=3)
+        hoja, file_like = leer_hoja_valida(url)
+        df = pd.read_excel(file_like, sheet_name=hoja, header=3)
         code = buscar_country_code(df, nombre_pais_json)
         if code:
             country_code_obtenido = code.upper()
@@ -95,22 +104,22 @@ if not country_code_obtenido:
     raise ValueError(f"No se encontró el país '{nombre_pais_json}' en ninguno de los datasets.")
 
 # ----------------------------------------------------------------------
-# 6️⃣ Función para leer y transformar Excel del World Bank
+# 6️⃣ Leer y transformar Excel (usa lectura binaria)
 # ----------------------------------------------------------------------
 def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codigo_upper=None):
     if codigo_upper is None:
         codigo_upper = codigo
     try:
-        hoja = leer_hoja_valida(url)
-        df = pd.read_excel(url, sheet_name=hoja, header=3)
+        hoja, file_like = leer_hoja_valida(url)
+        df = pd.read_excel(file_like, sheet_name=hoja, header=3)
     except Exception as e:
         raise RuntimeError(f"Fallo en la lectura del Excel para {nombre_indicador}: {e}")
 
     if "Country Code" not in df.columns:
-        raise ValueError(f"El dataset {nombre_indicador} no contiene 'Country Code'.")
+        raise ValueError(f"El dataset {nombre_indicador} no contiene la columna 'Country Code'")
 
     if codigo not in df["Country Code"].unique():
-        raise ValueError(f"No se encontró el país '{codigo}' en el dataset de {nombre_indicador}.")
+        raise ValueError(f"No se encontró el país '{codigo}' en el dataset de {nombre_indicador}")
 
     fila = df[df["Country Code"] == codigo]
     columnas_años = [c for c in df.columns if str(c).isdigit()]
@@ -121,6 +130,7 @@ def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codig
     df_result[codigo_upper] = pd.to_numeric(df_result[codigo_upper], errors="coerce")
     df_result["año"] = pd.to_numeric(df_result["año"], errors="coerce").astype("Int64")
     return df_result.drop(columns=["Country Code"])
+
 
 
 # ----------------------------------------------------------------------
@@ -314,5 +324,6 @@ print(Datos_Fecha.head())
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
 
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
+
 
 
