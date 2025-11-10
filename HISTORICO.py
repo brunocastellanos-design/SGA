@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import json
-import io
-import requests
 
 # ----------------------------------------------------------------------
 # 1️⃣ Leer configuración del JSON
@@ -51,58 +49,35 @@ def buscar_country_code(df, nombre_pais):
     return fila['Country Code'].values[0] if not fila.empty else None
 
 # ----------------------------------------------------------------------
-# 4️⃣ Buscar country code en los datasets
+# 4️⃣ Buscar country code
 # ----------------------------------------------------------------------
 country_code_obtenido = None
 for nombre, url in urls.items():
     try:
-        response = requests.get(url, timeout=60)
-        xls = pd.ExcelFile(io.BytesIO(response.content))
-        sheet = "Data" if "Data" in xls.sheet_names else xls.sheet_names[0]
-        df = xls.parse(sheet, header=3)
+        xl = pd.ExcelFile(url)
+        sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
+        df = xl.parse(sheet, header=3)
         code = buscar_country_code(df, nombre_pais_json)
         if code:
             country_code_obtenido = code.upper()
             print(f"✅ Código de país encontrado: {country_code_obtenido} (en {nombre})")
             break
     except Exception as e:
-        print(f"⚠️ No se pudo leer {nombre} para buscar código de país: {e}")
+        print(f"⚠️ No se pudo leer {nombre}: {e}")
 
 if not country_code_obtenido:
     raise ValueError(f"No se encontró el país '{nombre_pais_json}' en ninguno de los datasets.")
 
 # ----------------------------------------------------------------------
-# 5️⃣ Función robusta para leer Excel del World Bank
+# 5️⃣ Función para leer y transformar Excel directamente desde URL
 # ----------------------------------------------------------------------
 def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codigo_upper=None):
     if codigo_upper is None:
         codigo_upper = codigo
-
     try:
-        response = requests.get(url, timeout=60)
-        response.raise_for_status()
-        contenido = io.BytesIO(response.content)
-
-        try:
-            xls = pd.ExcelFile(contenido)
-        except Exception:
-            raise RuntimeError("El contenido descargado no parece un archivo Excel válido.")
-
-        hoja_valida = None
-        for hoja in xls.sheet_names:
-            try:
-                df_test = pd.read_excel(xls, sheet_name=hoja, nrows=5)
-                if any("Country" in str(c) for c in df_test.columns):
-                    hoja_valida = hoja
-                    break
-            except Exception:
-                continue
-
-        if hoja_valida is None:
-            raise ValueError(f"No se encontró una hoja válida en el archivo {url}")
-
-        df = pd.read_excel(xls, sheet_name=hoja_valida, header=3)
-
+        xl = pd.ExcelFile(url)
+        sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
+        df = xl.parse(sheet, header=3)
     except Exception as e:
         raise RuntimeError(f"Fallo en la lectura del Excel para {nombre_indicador}: {e}")
 
@@ -119,7 +94,7 @@ def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codig
     return df_result.drop(columns=["Country Code"])
 
 # ----------------------------------------------------------------------
-# 6️⃣ Carga, procesamiento y unión de datos
+# 6️⃣ Carga y unión de datos
 # ----------------------------------------------------------------------
 datasets = {}
 print(f"\nIniciando la carga de datos para el país: {country_code_obtenido}")
@@ -136,7 +111,7 @@ for nombre, url in urls.items():
         print(f"❌ Error al procesar {nombre}: {e}")
 
 if "Poblacion_Destino" not in datasets:
-    raise RuntimeError("No se pudo cargar 'Poblacion_Destino' como base para la unión.")
+    raise RuntimeError("No se pudo cargar 'Poblacion_Destino' como base.")
 
 Datos_Fecha = datasets["Poblacion_Destino"].copy()
 for key, df in datasets.items():
@@ -170,6 +145,7 @@ if all(col in Datos_Fecha.columns for col in ["Cantidad_Turistas_Año", "Poblaci
 def categorizar_npselect(df, col, condiciones, valores):
     df[f"{col}_cat"] = np.select(condiciones, valores, default=None).astype(object)
 
+# Gobernanza
 gob_cols = ["Control_Corrupcion", "Estado_Derecho", "Efectividad_Gubernamental", "Rendicion_Cuentas"]
 for col in gob_cols:
     if col in Datos_Fecha.columns:
@@ -182,6 +158,7 @@ for col in gob_cols:
         valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
         categorizar_npselect(Datos_Fecha, col, condiciones, valores)
 
+# Inseguridad Alimentaria
 if "Inseguridad_Alimentaria" in Datos_Fecha.columns:
     condiciones = [
         Datos_Fecha["Inseguridad_Alimentaria"] <= 10,
@@ -191,6 +168,7 @@ if "Inseguridad_Alimentaria" in Datos_Fecha.columns:
     valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
     categorizar_npselect(Datos_Fecha, "Inseguridad_Alimentaria", condiciones, valores)
 
+# Población urbana
 if "Poblacion_Urbana" in Datos_Fecha.columns:
     condiciones = [
         Datos_Fecha["Poblacion_Urbana"] <= 10,
@@ -207,15 +185,5 @@ Datos_Fecha = Datos_Fecha.iloc[-10:]  # Últimos 10 años
 print("\nVista preliminar de Datos_Fecha:")
 print(Datos_Fecha.head())
 
-try:
-    Datos_Fecha.to_excel("Historico.xlsx", index=False)
-    print("\n✅ Datos guardados correctamente en 'Historico.xlsx'.")
-except Exception as e:
-    print(f"❌ Error al guardar el archivo: {e}")
-
-
-
-
-
-
-
+Datos_Fecha.to_excel("Historico.xlsx", index=False)
+print("\n✅ Datos guardados correctamente en 'Historico.xlsx'.")
