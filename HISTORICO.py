@@ -37,7 +37,7 @@ urls = {
     "Homicidios": "https://api.worldbank.org/v2/en/indicator/VC.IHR.PSRC.P5?downloadformat=excel",
     "IPC": "https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=excel",
     "Acceso_Agua_Potable": "https://api.worldbank.org/v2/en/indicator/SH.H2O.BASW.ZS?downloadformat=excel",
-    "Acceso_Saneamiento": "https://api.worldbank.org/v2/en/indicator/SH.STA.BASS.ZS?downloadformat=excel",
+    "Acceso_Saneamiento": "https://api.worldbank.org/v2/es/indicator/SH.STA.BASS.ZS?downloadformat=excel",
     "Poblacion_Urbana": "https://api.worldbank.org/v2/en/indicator/EN.POP.SLUM.UR.ZS?downloadformat=excel"
 }
 
@@ -49,43 +49,40 @@ def buscar_country_code(df, nombre_pais):
     return fila['Country Code'].values[0] if not fila.empty else None
 
 # ----------------------------------------------------------------------
-# 4️⃣ Buscar country code
+# 4️⃣ Buscar country code en los datasets
 # ----------------------------------------------------------------------
 country_code_obtenido = None
 for nombre, url in urls.items():
     try:
-        xl = pd.ExcelFile(url)
-        sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
-        df = xl.parse(sheet, header=3)
+        df = pd.read_excel(url, sheet_name="Data", header=3)
         code = buscar_country_code(df, nombre_pais_json)
         if code:
             country_code_obtenido = code.upper()
             print(f"✅ Código de país encontrado: {country_code_obtenido} (en {nombre})")
             break
     except Exception as e:
-        print(f"⚠️ No se pudo leer {nombre}: {e}")
+        print(f"⚠️ No se pudo leer {nombre} para buscar código de país: {e}")
 
 if not country_code_obtenido:
     raise ValueError(f"No se encontró el país '{nombre_pais_json}' en ninguno de los datasets.")
 
 # ----------------------------------------------------------------------
-# 5️⃣ Función para leer y transformar Excel directamente desde URL
+# 5️⃣ Función para leer y transformar Excel del World Bank
 # ----------------------------------------------------------------------
 def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codigo_upper=None):
     if codigo_upper is None:
         codigo_upper = codigo
     try:
-        xl = pd.ExcelFile(url)
-        sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
-        df = xl.parse(sheet, header=3)
+        df = pd.read_excel(url, sheet_name="Data", header=3)
     except Exception as e:
         raise RuntimeError(f"Fallo en la lectura del Excel para {nombre_indicador}: {e}")
 
     if codigo not in df["Country Code"].unique():
-        raise ValueError(f"No se encontró el país '{codigo}' en {nombre_indicador}.")
+        raise ValueError(f"No se encontró el país '{codigo}' en el dataset de {nombre_indicador}.")
 
     fila = df[df["Country Code"] == codigo]
     columnas_años = [c for c in df.columns if str(c).isdigit()]
+
     df_result = fila[["Country Code"] + columnas_años].melt(
         id_vars="Country Code", var_name="año", value_name=codigo_upper
     )
@@ -94,35 +91,29 @@ def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codig
     return df_result.drop(columns=["Country Code"])
 
 # ----------------------------------------------------------------------
-# 6️⃣ Carga y unión de datos
+# 6️⃣ Carga, procesamiento y unión de datos
 # ----------------------------------------------------------------------
 datasets = {}
-print(f"\nIniciando la carga de datos para el país: {country_code_obtenido}")
 for nombre, url in urls.items():
     try:
         df = leer_excel_codigo(url, nombre)
         if not df.empty:
             df.rename(columns={country_code_obtenido: nombre}, inplace=True)
             datasets[nombre] = df
-            print(f"✅ {nombre} cargado correctamente.")
+            print(f"✅ {nombre} cargado.")
         else:
-            print(f"⚠️ {nombre} vacío.")
+            print(f"⚠️ {nombre} no tiene datos para el país.")
     except Exception as e:
         print(f"❌ Error al procesar {nombre}: {e}")
 
-if "Poblacion_Destino" not in datasets:
-    raise RuntimeError("No se pudo cargar 'Poblacion_Destino' como base.")
-
 Datos_Fecha = datasets["Poblacion_Destino"].copy()
-for key, df in datasets.items():
-    if key != "Poblacion_Destino":
-        Datos_Fecha = pd.merge(Datos_Fecha, df, on="año", how="outer")
-
-Datos_Fecha = Datos_Fecha[pd.notna(Datos_Fecha["año"])].reset_index(drop=True)
-Datos_Fecha["año"] = Datos_Fecha["año"].fillna(0).astype(int)
+for key in [k for k in datasets.keys() if k != "Poblacion_Destino"]:
+    Datos_Fecha = pd.merge(Datos_Fecha, datasets[key], on="año", how="outer")
+Datos_Fecha = Datos_Fecha[pd.notna(Datos_Fecha['año'])].reset_index(drop=True)
+Datos_Fecha['año'] = Datos_Fecha['año'].astype(int)
 
 # ----------------------------------------------------------------------
-# 7️⃣ Limpieza y cálculo de ratios
+# 7️⃣ Limpieza y cálculo de ratio
 # ----------------------------------------------------------------------
 numericas = [
     "Cantidad_Turistas_Año", "Poblacion_Destino", "Control_Corrupcion", "Estado_Derecho",
@@ -136,11 +127,11 @@ for col in numericas:
     if col in Datos_Fecha.columns:
         Datos_Fecha[col] = pd.to_numeric(Datos_Fecha[col].astype(str).str.replace(",", "").str.strip(), errors='coerce')
 
-if all(col in Datos_Fecha.columns for col in ["Cantidad_Turistas_Año", "Poblacion_Destino"]):
+if "Cantidad_Turistas_Año" in Datos_Fecha.columns and "Poblacion_Destino" in Datos_Fecha.columns:
     Datos_Fecha["ratio_turistas_residentes"] = Datos_Fecha["Cantidad_Turistas_Año"] / Datos_Fecha["Poblacion_Destino"] * 100
 
 # ----------------------------------------------------------------------
-# 8️⃣ Categorización
+# 8️⃣ Categorización (condiciones exactas que me diste)
 # ----------------------------------------------------------------------
 def categorizar_npselect(df, col, condiciones, valores):
     df[f"{col}_cat"] = np.select(condiciones, valores, default=None).astype(object)
@@ -152,31 +143,73 @@ for col in gob_cols:
         condiciones = [
             Datos_Fecha[col] >= 1.0,
             (Datos_Fecha[col] >= 0.0) & (Datos_Fecha[col] < 1.0),
-            (Datos_Fecha[col] >= -1.0) & (Datos_Fecha[col] < 0.0),
+            (Datos_Fecha[col] >= -1.0) & (Datos_Fecha[col] <= -0.01),
             Datos_Fecha[col] < -1.0
         ]
         valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
         categorizar_npselect(Datos_Fecha, col, condiciones, valores)
 
-# Inseguridad Alimentaria
-if "Inseguridad_Alimentaria" in Datos_Fecha.columns:
+# Rangos de otros indicadores
+if "Estabilidad_Politica" in Datos_Fecha.columns:
     condiciones = [
-        Datos_Fecha["Inseguridad_Alimentaria"] <= 10,
-        (Datos_Fecha["Inseguridad_Alimentaria"] > 10) & (Datos_Fecha["Inseguridad_Alimentaria"] <= 30),
-        Datos_Fecha["Inseguridad_Alimentaria"] > 30
+        Datos_Fecha["Estabilidad_Politica"] >= 75,
+        (Datos_Fecha["Estabilidad_Politica"] >= 50) & (Datos_Fecha["Estabilidad_Politica"] < 75),
+        (Datos_Fecha["Estabilidad_Politica"] >= 25) & (Datos_Fecha["Estabilidad_Politica"] <= 49),
+        Datos_Fecha["Estabilidad_Politica"] < 25
     ]
-    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
-    categorizar_npselect(Datos_Fecha, "Inseguridad_Alimentaria", condiciones, valores)
+    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
+    categorizar_npselect(Datos_Fecha, "Estabilidad_Politica", condiciones, valores)
 
-# Población urbana
-if "Poblacion_Urbana" in Datos_Fecha.columns:
+# Homicidios
+if "Homicidios" in Datos_Fecha.columns:
     condiciones = [
-        Datos_Fecha["Poblacion_Urbana"] <= 10,
-        (Datos_Fecha["Poblacion_Urbana"] > 10) & (Datos_Fecha["Poblacion_Urbana"] <= 30),
-        Datos_Fecha["Poblacion_Urbana"] > 30
+        Datos_Fecha["Homicidios"] < 5,
+        (Datos_Fecha["Homicidios"] >= 5) & (Datos_Fecha["Homicidios"] <= 15),
+        (Datos_Fecha["Homicidios"] > 15) & (Datos_Fecha["Homicidios"] <= 30),
+        Datos_Fecha["Homicidios"] > 30
     ]
-    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
-    categorizar_npselect(Datos_Fecha, "Poblacion_Urbana", condiciones, valores)
+    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
+    categorizar_npselect(Datos_Fecha, "Homicidios", condiciones, valores)
+
+# Crecimiento Poblacional
+if "Crecimiento_Poblacional" in Datos_Fecha.columns:
+    condiciones = [
+        Datos_Fecha["Crecimiento_Poblacional"] < 0,
+        (Datos_Fecha["Crecimiento_Poblacional"] >= 0) & (Datos_Fecha["Crecimiento_Poblacional"] <= 1),
+        (Datos_Fecha["Crecimiento_Poblacional"] > 1) & (Datos_Fecha["Crecimiento_Poblacional"] <= 2),
+        Datos_Fecha["Crecimiento_Poblacional"] > 2
+    ]
+    valores = ["ALTO ⭡", "MEDIO ⭤", "BAJO ⭣", "ALTO ⭡"]
+    categorizar_npselect(Datos_Fecha, "Crecimiento_Poblacional", condiciones, valores)
+
+# IPC
+if "IPC" in Datos_Fecha.columns:
+    bins = [-np.inf, 3, 15, np.inf]
+    labels = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
+    Datos_Fecha["IPC_cat"] = pd.cut(Datos_Fecha["IPC"], bins=bins, labels=labels, right=False).astype(object)
+
+# Pobreza y otros indicadores (todas las condiciones originales)
+indicadores = {
+    "Pobreza_Poblacion_Porcentual": [(0,10),(10,50),(50, np.inf)],
+    "Pobreza_Multidimennsional_Porcentual": [(0,10),(10,30),(30,np.inf)],
+    "Porcentaje_Edad_Laboral": [(0,55),(55,70),(70,np.inf)],
+    "Porcentaje_Edad_Laboral_Estudios": [(0,30),(30,59),(60,np.inf)],
+    "Tasa_Desempleo": [(0,6),(6,10),(10,np.inf)],
+    "ratio_turistas_residentes": [(0,100),(100,300),(300,np.inf)],
+    "Acceso_Agua_Potable": [(0,60),(60,90),(90,np.inf)],
+    "Acceso_Saneamiento": [(0,60),(60,90),(90,np.inf)],
+    "Inseguridad_Alimentaria": [(0,10),(10,30),(30,np.inf)],
+    "Poblacion_Urbana": [(0,10),(10,30),(30,np.inf)]
+}
+
+valores_base = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
+
+for col, bins in indicadores.items():
+    if col in Datos_Fecha.columns:
+        condiciones = [
+            (Datos_Fecha[col] >= low) & (Datos_Fecha[col] < high) for (low, high) in bins
+        ]
+        categorizar_npselect(Datos_Fecha, col, condiciones, valores_base)
 
 # ----------------------------------------------------------------------
 # 9️⃣ Guardar resultado
@@ -186,4 +219,6 @@ print("\nVista preliminar de Datos_Fecha:")
 print(Datos_Fecha.head())
 
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
-print("\n✅ Datos guardados correctamente en 'Historico.xlsx'.")
+print("\n✅ Datos guardados en 'Historico.xlsx'.")
+
+
