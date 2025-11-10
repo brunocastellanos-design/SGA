@@ -150,15 +150,17 @@ for col in gob_cols:
         categorizar_npselect(Datos_Fecha, col, condiciones, valores)
 
 # Rangos de otros indicadores
-if "Estabilidad_Politica" in Datos_Fecha.columns:
-    condiciones = [
-        Datos_Fecha["Estabilidad_Politica"] >= 75,
-        (Datos_Fecha["Estabilidad_Politica"] >= 50) & (Datos_Fecha["Estabilidad_Politica"] < 75),
-        (Datos_Fecha["Estabilidad_Politica"] >= 25) & (Datos_Fecha["Estabilidad_Politica"] <= 49),
-        Datos_Fecha["Estabilidad_Politica"] < 25
-    ]
-    valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
-    categorizar_npselect(Datos_Fecha, "Estabilidad_Politica", condiciones, valores)
+gob_cols = ["Estabilidad_Politica", "Calidad_Regulatoria"]
+for col in gob_cols:
+    if col in Datos_Fecha.columns:
+        condiciones = [
+            Datos_Fecha[col] >= 75,
+            (Datos_Fecha[col] >= 50) & (Datos_Fecha[col] < 75),
+            (Datos_Fecha[col] >= 25) & (Datos_Fecha[col] <= 49),
+            Datos_Fecha[col] < 25
+        ]
+        valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
+        categorizar_npselect(Datos_Fecha, col, condiciones, valores)
 
 # Homicidios
 if "Homicidios" in Datos_Fecha.columns:
@@ -220,5 +222,6 @@ print(Datos_Fecha.head())
 
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
+
 
 
