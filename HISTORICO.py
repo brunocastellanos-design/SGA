@@ -45,18 +45,44 @@ urls = {
 # 3️⃣ Función para buscar el código de país
 # ----------------------------------------------------------------------
 def buscar_country_code(df, nombre_pais):
-    fila = df[df['Country Name'].str.lower().str.strip() == nombre_pais.lower().strip()]
+    df["Country Name"] = df["Country Name"].astype(str).str.strip().str.lower()
+    nombre_pais = nombre_pais.strip().lower()
+    fila = df[df["Country Name"] == nombre_pais]
     if not fila.empty:
-        return fila['Country Code'].values[0]
+        return fila["Country Code"].values[0]
     return None
 
 # ----------------------------------------------------------------------
-# 4️⃣ Buscar country code en los datasets
+# 4️⃣ Leer Excel y detectar hoja correcta
+# ----------------------------------------------------------------------
+def leer_hoja_valida(url):
+    try:
+        xls = pd.ExcelFile(url)
+    except Exception as e:
+        raise RuntimeError(f"No se pudo abrir el archivo desde {url}: {e}")
+
+    hoja_valida = None
+    for hoja in xls.sheet_names:
+        try:
+            df_temp = pd.read_excel(xls, sheet_name=hoja, nrows=5)
+            if "Country Name" in df_temp.columns:
+                hoja_valida = hoja
+                break
+        except Exception:
+            continue
+
+    if not hoja_valida:
+        raise ValueError(f"No se encontró una hoja válida en el archivo {url}")
+    return hoja_valida
+
+# ----------------------------------------------------------------------
+# 5️⃣ Buscar country code en los datasets
 # ----------------------------------------------------------------------
 country_code_obtenido = None
 for nombre, url in urls.items():
     try:
-        df = pd.read_excel(url, sheet_name="Data", header=3)
+        hoja = leer_hoja_valida(url)
+        df = pd.read_excel(url, sheet_name=hoja, header=3)
         code = buscar_country_code(df, nombre_pais_json)
         if code:
             country_code_obtenido = code.upper()
@@ -69,15 +95,19 @@ if not country_code_obtenido:
     raise ValueError(f"No se encontró el país '{nombre_pais_json}' en ninguno de los datasets.")
 
 # ----------------------------------------------------------------------
-# 5️⃣ Función para leer y transformar Excel del World Bank
+# 6️⃣ Función para leer y transformar Excel del World Bank
 # ----------------------------------------------------------------------
 def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codigo_upper=None):
     if codigo_upper is None:
         codigo_upper = codigo
     try:
-        df = pd.read_excel(url, sheet_name="Data", header=3)
+        hoja = leer_hoja_valida(url)
+        df = pd.read_excel(url, sheet_name=hoja, header=3)
     except Exception as e:
         raise RuntimeError(f"Fallo en la lectura del Excel para {nombre_indicador}: {e}")
+
+    if "Country Code" not in df.columns:
+        raise ValueError(f"El dataset {nombre_indicador} no contiene 'Country Code'.")
 
     if codigo not in df["Country Code"].unique():
         raise ValueError(f"No se encontró el país '{codigo}' en el dataset de {nombre_indicador}.")
@@ -88,38 +118,10 @@ def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codig
     df_result = fila[["Country Code"] + columnas_años].melt(
         id_vars="Country Code", var_name="año", value_name=codigo_upper
     )
-    df_result[codigo_upper] = pd.to_numeric(df_result[codigo_upper], errors='coerce')
-    df_result['año'] = pd.to_numeric(df_result['año'], errors='coerce').astype('Int64')
+    df_result[codigo_upper] = pd.to_numeric(df_result[codigo_upper], errors="coerce")
+    df_result["año"] = pd.to_numeric(df_result["año"], errors="coerce").astype("Int64")
     return df_result.drop(columns=["Country Code"])
 
-# ----------------------------------------------------------------------
-# 6️⃣ Carga, procesamiento y unión de datos
-# ----------------------------------------------------------------------
-datasets = {}
-print(f"\nIniciando la carga de datos para el país: {country_code_obtenido}")
-for nombre, url in urls.items():
-    try:
-        df = leer_excel_codigo(url, nombre)
-        if not df.empty:
-            df.rename(columns={country_code_obtenido: nombre}, inplace=True)
-            datasets[nombre] = df
-            print(f"✅ {nombre} cargado.")
-        else:
-            print(f"⚠️ {nombre} no tiene datos para el país.")
-    except Exception as e:
-        print(f"❌ Error al procesar {nombre}: {e}")
-
-# Unión de datasets
-Datos_Fecha = None
-initial_key = "Poblacion_Destino"
-if datasets and initial_key in datasets:
-    Datos_Fecha = datasets[initial_key].copy()
-    for key in [k for k in datasets.keys() if k != initial_key]:
-        Datos_Fecha = pd.merge(Datos_Fecha, datasets[key], on="año", how="outer")
-    Datos_Fecha = Datos_Fecha[pd.notna(Datos_Fecha['año'])].reset_index(drop=True)
-    Datos_Fecha['año'] = Datos_Fecha['año'].astype(int)
-else:
-    raise RuntimeError("No se pudo cargar el dataset base 'Poblacion_Destino'.")
 
 # ----------------------------------------------------------------------
 # 7️⃣ Limpieza y cálculo de ratio turistas/población
@@ -312,4 +314,5 @@ print(Datos_Fecha.head())
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
 
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
+
 
