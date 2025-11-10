@@ -1,20 +1,22 @@
 import pandas as pd
 import numpy as np
 import json
+import io
+import requests
 
 # ----------------------------------------------------------------------
 # 1️⃣ Leer configuración del JSON
 # ----------------------------------------------------------------------
 with open("config.json", "r", encoding="utf-8") as f:
     config = json.load(f)
-    
+
 nombre_pais_json = config.get("País")
 if not nombre_pais_json:
     raise ValueError("El archivo config.json debe contener la clave 'País'.")
 print(f"Nombre de país en JSON: {nombre_pais_json}")
 
 # ----------------------------------------------------------------------
-# 2️⃣ URLs de los datasets del World Bank (SIN CAMBIOS)
+# 2️⃣ URLs de los datasets del World Bank
 # ----------------------------------------------------------------------
 urls = {
     "Pobreza_Multidimennsional_Porcentual": "https://api.worldbank.org/v2/en/indicator/SI.POV.MDIM?downloadformat=excel",
@@ -37,7 +39,7 @@ urls = {
     "Homicidios": "https://api.worldbank.org/v2/en/indicator/VC.IHR.PSRC.P5?downloadformat=excel",
     "IPC": "https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=excel",
     "Acceso_Agua_Potable": "https://api.worldbank.org/v2/en/indicator/SH.H2O.BASW.ZS?downloadformat=excel",
-    "Acceso_Saneamiento": "https://api.worldbank.org/v2/es/indicator/SH.STA.BASS.ZS?downloadformat=excel",
+    "Acceso_Saneamiento": "https://api.worldbank.org/v2/en/indicator/SH.STA.BASS.ZS?downloadformat=excel",
     "Poblacion_Urbana": "https://api.worldbank.org/v2/en/indicator/EN.POP.SLUM.UR.ZS?downloadformat=excel"
 }
 
@@ -54,31 +56,53 @@ def buscar_country_code(df, nombre_pais):
 country_code_obtenido = None
 for nombre, url in urls.items():
     try:
-        xl = pd.ExcelFile(url)
-        sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
-        df = xl.parse(sheet, header=3)
+        response = requests.get(url, timeout=60)
+        xls = pd.ExcelFile(io.BytesIO(response.content))
+        sheet = "Data" if "Data" in xls.sheet_names else xls.sheet_names[0]
+        df = xls.parse(sheet, header=3)
         code = buscar_country_code(df, nombre_pais_json)
         if code:
             country_code_obtenido = code.upper()
             print(f"✅ Código de país encontrado: {country_code_obtenido} (en {nombre})")
             break
     except Exception as e:
-        print(f"⚠️ No se pudo leer {nombre}: {e}")
+        print(f"⚠️ No se pudo leer {nombre} para buscar código de país: {e}")
 
 if not country_code_obtenido:
-    raise ValueError(f"No se encontró el país '{nombre_pais_json}' en ningún dataset.")
+    raise ValueError(f"No se encontró el país '{nombre_pais_json}' en ninguno de los datasets.")
 
 # ----------------------------------------------------------------------
-# 5️⃣ Función para leer y transformar Excel del World Bank
+# 5️⃣ Función robusta para leer Excel del World Bank
 # ----------------------------------------------------------------------
 def leer_excel_codigo(url, nombre_indicador, codigo=country_code_obtenido, codigo_upper=None):
     if codigo_upper is None:
         codigo_upper = codigo
+
     try:
-        response = requests.get(url)
-        xl = pd.ExcelFile(io.BytesIO(response.content))
-        sheet = "Data" if "Data" in xl.sheet_names else xl.sheet_names[0]
-        df = xl.parse(sheet, header=3)
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        contenido = io.BytesIO(response.content)
+
+        try:
+            xls = pd.ExcelFile(contenido)
+        except Exception:
+            raise RuntimeError("El contenido descargado no parece un archivo Excel válido.")
+
+        hoja_valida = None
+        for hoja in xls.sheet_names:
+            try:
+                df_test = pd.read_excel(xls, sheet_name=hoja, nrows=5)
+                if any("Country" in str(c) for c in df_test.columns):
+                    hoja_valida = hoja
+                    break
+            except Exception:
+                continue
+
+        if hoja_valida is None:
+            raise ValueError(f"No se encontró una hoja válida en el archivo {url}")
+
+        df = pd.read_excel(xls, sheet_name=hoja_valida, header=3)
+
     except Exception as e:
         raise RuntimeError(f"Fallo en la lectura del Excel para {nombre_indicador}: {e}")
 
@@ -105,15 +129,14 @@ for nombre, url in urls.items():
         if not df.empty:
             df.rename(columns={country_code_obtenido: nombre}, inplace=True)
             datasets[nombre] = df
-            print(f"✅ {nombre} cargado.")
+            print(f"✅ {nombre} cargado correctamente.")
         else:
             print(f"⚠️ {nombre} vacío.")
     except Exception as e:
         print(f"❌ Error al procesar {nombre}: {e}")
 
-# Unión
 if "Poblacion_Destino" not in datasets:
-    raise RuntimeError("No se pudo cargar 'Poblacion_Destino' como base.")
+    raise RuntimeError("No se pudo cargar 'Poblacion_Destino' como base para la unión.")
 
 Datos_Fecha = datasets["Poblacion_Destino"].copy()
 for key, df in datasets.items():
@@ -124,7 +147,7 @@ Datos_Fecha = Datos_Fecha[pd.notna(Datos_Fecha["año"])].reset_index(drop=True)
 Datos_Fecha["año"] = Datos_Fecha["año"].fillna(0).astype(int)
 
 # ----------------------------------------------------------------------
-# 7️⃣ Limpieza y cálculo de ratio
+# 7️⃣ Limpieza y cálculo de ratios
 # ----------------------------------------------------------------------
 numericas = [
     "Cantidad_Turistas_Año", "Poblacion_Destino", "Control_Corrupcion", "Estado_Derecho",
@@ -147,7 +170,6 @@ if all(col in Datos_Fecha.columns for col in ["Cantidad_Turistas_Año", "Poblaci
 def categorizar_npselect(df, col, condiciones, valores):
     df[f"{col}_cat"] = np.select(condiciones, valores, default=None).astype(object)
 
-# Gobernanza
 gob_cols = ["Control_Corrupcion", "Estado_Derecho", "Efectividad_Gubernamental", "Rendicion_Cuentas"]
 for col in gob_cols:
     if col in Datos_Fecha.columns:
@@ -160,7 +182,6 @@ for col in gob_cols:
         valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
         categorizar_npselect(Datos_Fecha, col, condiciones, valores)
 
-# Rangos corregidos
 if "Inseguridad_Alimentaria" in Datos_Fecha.columns:
     condiciones = [
         Datos_Fecha["Inseguridad_Alimentaria"] <= 10,
@@ -188,9 +209,11 @@ print(Datos_Fecha.head())
 
 try:
     Datos_Fecha.to_excel("Historico.xlsx", index=False)
-    print("\n✅ Datos guardados en 'Historico.xlsx'.")
+    print("\n✅ Datos guardados correctamente en 'Historico.xlsx'.")
 except Exception as e:
     print(f"❌ Error al guardar el archivo: {e}")
+
+
 
 
 
