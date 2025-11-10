@@ -20,7 +20,7 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install pandas unidecode openpyxl xlrd
+          pip install pandas unidecode openpyxl xlrd request
 
       - name: Ejecutar script HISTORICO.py
         run: python HISTORICO.py
