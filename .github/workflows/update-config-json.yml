@@ -9,17 +9,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repositorio
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Extraer contenido del issue
+      - name: Guardar JSON del issue en config.json
         run: |
-          echo "${{ github.event.issue.body }}" > config.json
+          body=$(jq -r .issue.body <<< '${{ toJson(github.event) }}')
+          # Eliminar la primera línea "UPDATE_CONFIG_JSON"
+          cleaned=$(printf "%s" "$body" | tail -n +2)
+          printf "%s" "$cleaned" > config.json
 
-      - name: Commit y push
+      - name: Commit & push
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           git add config.json
           git commit -m "Update config.json desde Power Automate"
           git push
+
