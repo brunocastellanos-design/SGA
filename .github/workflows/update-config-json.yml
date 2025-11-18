@@ -1,4 +1,4 @@
-name: Update config.json from Issue
+name: Update config.json
 
 on:
   issues:
@@ -6,40 +6,20 @@ on:
 
 jobs:
   update-config:
-    if: contains(github.event.issue.body, 'UPDATE_CONFIG_JSON')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repositorio
         uses: actions/checkout@v3
-        
-      - name: Extract JSON from issue body
-        id: extract
-        run: |
-          echo "${{ github.event.issue.body }}" > issue.txt
-          # Remove first line (UPDATE_CONFIG_JSON)
-          tail -n +2 issue.txt > new_config.json
-          cat new_config.json
 
-      - name: Replace config.json with new content
+      - name: Extraer contenido del issue
         run: |
-          mv new_config.json config.json
+          echo "${{ github.event.issue.body }}" > config.json
 
-      - name: Commit changes
+      - name: Commit y push
         run: |
-          git config --local user.email "bot@github.com"
-          git config --local user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
           git add config.json
-          git commit -m "Updated config.json from issue #${{ github.event.issue.number }}"
+          git commit -m "Update config.json desde Power Automate"
           git push
-
-      - name: Close issue
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              state: "closed"
-            })
