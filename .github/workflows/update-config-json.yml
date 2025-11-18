@@ -1,0 +1,45 @@
+name: Update config.json from Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  update-config:
+    if: contains(github.event.issue.body, 'UPDATE_CONFIG_JSON')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Extract JSON from issue body
+        id: extract
+        run: |
+          echo "${{ github.event.issue.body }}" > issue.txt
+          # Remove first line (UPDATE_CONFIG_JSON)
+          tail -n +2 issue.txt > new_config.json
+          cat new_config.json
+
+      - name: Replace config.json with new content
+        run: |
+          mv new_config.json config.json
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "bot@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add config.json
+          git commit -m "Updated config.json from issue #${{ github.event.issue.number }}"
+          git push
+
+      - name: Close issue
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: "closed"
+            })
