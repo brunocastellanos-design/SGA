@@ -10,7 +10,7 @@ with open("config.json", "r", encoding="utf-8") as f:
 
 nombre_pais_json = config.get("Indique el país")
 if not nombre_pais_json:
-    raise ValueError("El archivo config.json debe contener la clave 'País'.")
+    raise ValueError("El archivo config.json debe contener la clave 'Indique el país'.")
 print(f"Nombre de país en JSON: {nombre_pais_json}")
 
 # ----------------------------------------------------------------------
@@ -42,11 +42,17 @@ urls = {
 }
 
 # ----------------------------------------------------------------------
-# 3️⃣ Función para buscar el código de país
+# 3️⃣ Función para buscar el código de país (coincidencia parcial)
 # ----------------------------------------------------------------------
 def buscar_country_code(df, nombre_pais):
-    fila = df[df['Country Name'].str.lower().str.strip() == nombre_pais.lower().strip()]
-    return fila['Country Code'].values[0] if not fila.empty else None
+    nombre_pais = nombre_pais.lower().strip()
+
+    # Coincidencia parcial: "egypt" → "egypt, arab rep."
+    mask = df["Country Name"].str.lower().str.contains(nombre_pais, na=False)
+
+    fila = df[mask]
+
+    return fila["Country Code"].values[0] if not fila.empty else None
 
 # ----------------------------------------------------------------------
 # 4️⃣ Buscar country code en los datasets
@@ -125,13 +131,17 @@ numericas = [
 
 for col in numericas:
     if col in Datos_Fecha.columns:
-        Datos_Fecha[col] = pd.to_numeric(Datos_Fecha[col].astype(str).str.replace(",", "").str.strip(), errors='coerce')
+        Datos_Fecha[col] = pd.to_numeric(
+            Datos_Fecha[col].astype(str).str.replace(",", "").str.strip(), errors='coerce'
+        )
 
 if "Cantidad_Turistas_Año" in Datos_Fecha.columns and "Poblacion_Destino" in Datos_Fecha.columns:
-    Datos_Fecha["ratio_turistas_residentes"] = Datos_Fecha["Cantidad_Turistas_Año"] / Datos_Fecha["Poblacion_Destino"] * 100
+    Datos_Fecha["ratio_turistas_residentes"] = (
+        Datos_Fecha["Cantidad_Turistas_Año"] / Datos_Fecha["Poblacion_Destino"] * 100
+    )
 
 # ----------------------------------------------------------------------
-# 8️⃣ Categorización (condiciones exactas que me diste)
+# 8️⃣ Categorización
 # ----------------------------------------------------------------------
 def categorizar_npselect(df, col, condiciones, valores):
     df[f"{col}_cat"] = np.select(condiciones, valores, default=None).astype(object)
@@ -149,7 +159,7 @@ for col in gob_cols:
         valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
         categorizar_npselect(Datos_Fecha, col, condiciones, valores)
 
-# Rangos de otros indicadores
+# Estabilidad y Regulación
 gob_cols = ["Estabilidad_Politica", "Calidad_Regulatoria"]
 for col in gob_cols:
     if col in Datos_Fecha.columns:
@@ -173,7 +183,7 @@ if "Homicidios" in Datos_Fecha.columns:
     valores = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡", "MUY ALTO ⚠"]
     categorizar_npselect(Datos_Fecha, "Homicidios", condiciones, valores)
 
-# Crecimiento Poblacional
+# Crecimiento poblacional
 if "Crecimiento_Poblacional" in Datos_Fecha.columns:
     condiciones = [
         Datos_Fecha["Crecimiento_Poblacional"] < 0,
@@ -190,7 +200,7 @@ if "IPC" in Datos_Fecha.columns:
     labels = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
     Datos_Fecha["IPC_cat"] = pd.cut(Datos_Fecha["IPC"], bins=bins, labels=labels, right=False).astype(object)
 
-# Pobreza y otros indicadores (todas las condiciones originales)
+# Indicadores adicionales
 indicadores = {
     "Pobreza_Poblacion_Porcentual": [(0,10),(10,50),(50, np.inf)],
     "Pobreza_Multidimennsional_Porcentual": [(0,10),(10,30),(30,np.inf)],
@@ -206,10 +216,10 @@ indicadores = {
 
 valores_base = ["BAJO ⭣", "MEDIO ⭤", "ALTO ⭡"]
 
-for col, bins in indicadores.items():
+for col, rangos in indicadores.items():
     if col in Datos_Fecha.columns:
         condiciones = [
-            (Datos_Fecha[col] >= low) & (Datos_Fecha[col] < high) for (low, high) in bins
+            (Datos_Fecha[col] >= low) & (Datos_Fecha[col] < high) for (low, high) in rangos
         ]
         categorizar_npselect(Datos_Fecha, col, condiciones, valores_base)
 
@@ -222,7 +232,3 @@ print(Datos_Fecha.head())
 
 Datos_Fecha.to_excel("Historico.xlsx", index=False)
 print("\n✅ Datos guardados en 'Historico.xlsx'.")
-
-
-
-
